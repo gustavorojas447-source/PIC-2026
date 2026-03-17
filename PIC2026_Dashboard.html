@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIC 2026 — Dashboard FAC</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --fac:#0a1628;--fac2:#132244;--gold:#c9a84c;--gold2:#e8c97e;
+  --green:#2ecc71;--red:#e74c3c;--blue:#4a9eff;
+  --txt:#e8edf5;--dim:#8a9bb8;--bord:rgba(201,168,76,0.25);
+  --card:rgba(19,34,68,0.85);--inp:rgba(10,22,40,0.9);
+  --fh:'Rajdhani',sans-serif;--fb:'IBM Plex Sans',sans-serif;--fm:'IBM Plex Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--fac);color:var(--txt);font-family:var(--fb);min-height:100vh;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(74,158,255,0.07),transparent),
+  repeating-linear-gradient(0deg,transparent,transparent 60px,rgba(201,168,76,0.025) 60px,rgba(201,168,76,0.025) 61px),
+  repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(201,168,76,0.025) 60px,rgba(201,168,76,0.025) 61px);}
+.hdr{background:linear-gradient(135deg,rgba(10,22,40,0.99),rgba(19,34,68,0.99));border-bottom:2px solid var(--gold);
+  padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:66px;
+  position:sticky;top:0;z-index:100;box-shadow:0 4px 28px rgba(0,0,0,0.55);}
+.hdr-logo{display:flex;align-items:center;gap:12px;}
+.shield{width:42px;height:42px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 0 14px rgba(201,168,76,0.4);}
+.hdr-title h1{font-family:var(--fh);font-size:1.25rem;font-weight:700;color:var(--gold);letter-spacing:2px;}
+.hdr-title p{font-size:0.62rem;color:var(--dim);letter-spacing:3px;text-transform:uppercase;}
+.nav{display:flex;gap:2px;flex-wrap:wrap;}
+.nb{background:transparent;border:1px solid transparent;color:var(--dim);font-family:var(--fh);
+  font-size:0.78rem;letter-spacing:1.5px;font-weight:600;padding:6px 13px;cursor:pointer;border-radius:4px;
+  transition:all 0.2s;text-transform:uppercase;}
+.nb:hover,.nb.on{color:var(--gold);border-color:var(--bord);background:rgba(201,168,76,0.08);}
+.hdr-r{display:flex;align-items:center;gap:9px;}
+.cpill{display:flex;align-items:center;gap:6px;font-family:var(--fm);font-size:0.62rem;
+  padding:5px 10px;border-radius:4px;border:1px solid;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.cpill.ok{color:var(--green);border-color:rgba(46,204,113,0.35);background:rgba(46,204,113,0.06);}
+.cpill.off{color:var(--dim);border-color:rgba(138,155,184,0.3);}
+.cpill.spin{color:var(--blue);border-color:rgba(74,158,255,0.35);animation:blink 1s infinite;}
+.liveb{display:flex;align-items:center;gap:7px;font-family:var(--fm);font-size:0.62rem;
+  color:var(--green);padding:5px 10px;border:1px solid rgba(46,204,113,0.3);border-radius:4px;}
+.dot{width:5px;height:5px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(46,204,113,0.4)}50%{opacity:.7;box-shadow:0 0 0 4px transparent}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+.view{display:none;padding:24px;max-width:1400px;margin:0 auto;}
+.view.on{display:block;animation:fi .3s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.ph{margin-bottom:20px;}
+.ph h2{font-family:var(--fh);font-size:1.8rem;font-weight:700;color:var(--gold);letter-spacing:2px;}
+.ph p{color:var(--dim);font-size:0.8rem;margin-top:3px;}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin-bottom:20px;}
+.kcard{background:var(--card);border:1px solid var(--bord);border-radius:8px;padding:16px 20px;
+  position:relative;overflow:hidden;transition:transform .2s;}
+.kcard:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.35);}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),transparent);}
+.kl{font-family:var(--fm);font-size:.58rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.kv{font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--txt);line-height:1;}
+.ks{font-size:.68rem;color:var(--dim);margin-top:4px;}
+.ki{position:absolute;top:12px;right:12px;font-size:1.4rem;opacity:.11;}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;}
+.cc{background:var(--card);border:1px solid var(--bord);border-radius:8px;padding:18px;}
+.cc.full{grid-column:1/-1;}
+.ct{font-family:var(--fh);font-size:.88rem;font-weight:600;color:var(--gold);letter-spacing:1.5px;margin-bottom:14px;text-transform:uppercase;}
+.tc{background:var(--card);border:1px solid var(--bord);border-radius:8px;overflow:hidden;margin-bottom:20px;}
+.th{padding:12px 18px;border-bottom:1px solid var(--bord);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.th h3{font-family:var(--fh);font-size:.88rem;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;}
+.ts{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{background:rgba(10,22,40,.85);font-family:var(--fm);font-size:.58rem;color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;padding:10px 12px;text-align:left;white-space:nowrap;}
+td{padding:10px 12px;font-size:.78rem;border-bottom:1px solid rgba(201,168,76,.07);}
+tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(201,168,76,.04);}
+.bdg{display:inline-block;padding:2px 8px;border-radius:20px;font-family:var(--fm);font-size:.58rem;font-weight:500;letter-spacing:1px;}
+.b-bl{background:rgba(74,158,255,.15);color:var(--blue);border:1px solid rgba(74,158,255,.3);}
+.b-gn{background:rgba(46,204,113,.12);color:var(--green);border:1px solid rgba(46,204,113,.3);}
+.trow td{font-weight:600;color:var(--gold);background:rgba(201,168,76,.05)!important;}
+.sc{background:var(--card);border:1px solid var(--bord);border-radius:8px;padding:22px 26px;margin-bottom:14px;}
+.ssb{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:6px;font-family:var(--fm);font-size:.73rem;margin-bottom:14px;line-height:1.5;}
+.ssb.ok{background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.3);color:var(--green);}
+.ssb.warn{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.3);color:var(--gold);}
+.ssb.err{background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.3);color:var(--red);}
+.ssb.info{background:rgba(74,158,255,.08);border:1px solid rgba(74,158,255,.3);color:var(--blue);}
+.fg-g{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+label{font-family:var(--fm);font-size:.58rem;color:var(--gold);text-transform:uppercase;letter-spacing:2px;}
+input,select{background:var(--inp);border:1px solid rgba(201,168,76,.2);border-radius:4px;
+  color:var(--txt);font-family:var(--fb);font-size:.84rem;padding:8px 12px;width:100%;transition:border-color .2s;}
+input:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.1);}
+select option{background:var(--fac2);}
+.btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--fac);border:none;
+  font-family:var(--fh);font-size:.88rem;font-weight:700;letter-spacing:2px;padding:11px 24px;
+  border-radius:4px;cursor:pointer;text-transform:uppercase;transition:all .2s;}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(201,168,76,.3);}
+.btn2{background:transparent;color:var(--dim);border:1px solid var(--bord);font-family:var(--fh);
+  font-size:.78rem;font-weight:600;letter-spacing:1.5px;padding:7px 18px;border-radius:4px;cursor:pointer;text-transform:uppercase;transition:all .2s;}
+.btn2:hover{color:var(--gold);border-color:var(--gold);}
+.xbtn{background:transparent;border:1px solid var(--bord);color:var(--dim);font-family:var(--fm);
+  font-size:.63rem;letter-spacing:1px;padding:4px 10px;border-radius:4px;cursor:pointer;transition:all .2s;}
+.xbtn:hover{color:var(--gold);border-color:var(--gold);}
+.iac{background:transparent;border:1px solid var(--bord);color:var(--dim);font-family:var(--fb);
+  font-size:.75rem;padding:6px 13px;border-radius:20px;cursor:pointer;transition:all .2s;}
+.iac:hover{color:var(--gold);border-color:var(--gold);background:rgba(201,168,76,.06);}
+/* MAP TABLE */
+.map-table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:10px;}
+.map-table th{background:rgba(10,22,40,.7);font-family:var(--fm);font-size:.6rem;color:var(--gold);padding:8px 12px;text-align:left;letter-spacing:1px;}
+.map-table td{padding:7px 12px;border-bottom:1px solid rgba(201,168,76,.06);vertical-align:middle;}
+.map-table tr:last-child td{border-bottom:none;}
+.map-table select{padding:5px 8px;font-size:.75rem;}
+.col-tag{display:inline-block;background:rgba(74,158,255,.12);color:var(--blue);border:1px solid rgba(74,158,255,.25);
+  padding:2px 8px;border-radius:4px;font-family:var(--fm);font-size:.65rem;}
+.col-req{color:var(--gold);font-family:var(--fm);font-size:.6rem;}
+/* TOAST / LOADING */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--fac2);border:1px solid var(--green);
+  color:var(--txt);padding:11px 18px;border-radius:8px;font-family:var(--fm);font-size:.73rem;
+  box-shadow:0 8px 28px rgba(0,0,0,.45);z-index:999;display:none;max-width:380px;}
+.toast.on{display:flex;align-items:center;gap:8px;animation:si .3s ease;}
+.toast.err{border-color:var(--red);}
+@keyframes si{from{transform:translateX(18px);opacity:0}to{transform:none;opacity:1}}
+.lov{position:fixed;inset:0;background:rgba(10,22,40,.93);display:none;align-items:center;justify-content:center;z-index:200;flex-direction:column;gap:16px;}
+.lov.on{display:flex;}
+.spinner{width:42px;height:42px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:rot .8s linear infinite;}
+@keyframes rot{to{transform:rotate(360deg)}}
+.ltxt{font-family:var(--fm);color:var(--gold);font-size:.73rem;letter-spacing:2px;}
+.empty{text-align:center;padding:44px;color:var(--dim);}
+.empty .ei{font-size:2.4rem;margin-bottom:12px;opacity:.24;}
+.empty p{font-family:var(--fm);font-size:.73rem;letter-spacing:1px;}
+@media(max-width:860px){
+  .hdr{padding:0 12px;height:auto;flex-wrap:wrap;padding-top:9px;padding-bottom:9px;gap:7px;}
+  .nav{order:3;width:100%;justify-content:center;}
+  .nb{padding:5px 8px;font-size:.68rem;}
+  .view{padding:11px;}
+  .cgrid{grid-template-columns:1fr;}
+  .hdr-r{display:none;}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-logo">
+    <div class="shield">✈️</div>
+    <div class="hdr-title">
+      <h1>PIC 2026</h1>
+      <p>Fuerza Aeroespacial Colombiana — JEAES</p>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nb on" onclick="sv('dashboard',this)">Dashboard</button>
+    <button class="nb"    onclick="sv('registros',this)">Registros</button>
+    <button class="nb"    onclick="sv('analisis',this)">Análisis IA</button>
+    <button class="nb"    onclick="sv('config',this)">⚙️ Configuración</button>
+  </nav>
+  <div class="hdr-r">
+    <div class="cpill off" id="cpill" onclick="sv('config',document.querySelectorAll('.nb')[3])">
+      🔗&nbsp;<span id="cst">Sin conectar</span>
+    </div>
+    <div class="liveb"><div class="dot"></div><span id="clk">--:--:--</span></div>
+  </div>
+</header>
+
+<!-- DASHBOARD -->
+<div id="view-dashboard" class="view on">
+  <div class="ph">
+    <h2>PANEL DE CONTROL — PIC 2026</h2>
+    <p id="dsub">Conecte su lista de SharePoint para ver datos en tiempo real</p>
+  </div>
+  <div style="text-align:right;margin-bottom:14px">
+    <button class="btn" onclick="cargarDatos()" style="width:auto;padding:9px 22px;font-size:.82rem">🔄 Actualizar desde SharePoint</button>
+  </div>
+  <div class="kgrid">
+    <div class="kcard"><div class="ki">📋</div><div class="kl">Registros</div><div class="kv" id="k0">0</div><div class="ks">Items en la lista</div></div>
+    <div class="kcard"><div class="ki">👥</div><div class="kl">Capacitados</div><div class="kv" id="k1">0</div><div class="ks">Personal total</div></div>
+    <div class="kcard"><div class="ki">⏱️</div><div class="kl">Horas</div><div class="kv" id="k2">0</div><div class="ks">Horas dictadas</div></div>
+    <div class="kcard"><div class="ki">📚</div><div class="kl">Eventos</div><div class="kv" id="k3">0</div><div class="ks">Capacitaciones</div></div>
+    <div class="kcard"><div class="ki">🎯</div><div class="kl">OF + SUB</div><div class="kv" id="k4">0</div><div class="ks">Cuadro de mando</div></div>
+    <div class="kcard"><div class="ki">🪖</div><div class="kl">Tropa</div><div class="kv" id="k5">0</div><div class="ks">SLP + SL12 + SL18</div></div>
+  </div>
+  <div class="cgrid">
+    <div class="cc"><div class="ct">Personal por Categoría</div><canvas id="cCat" style="max-height:230px"></canvas></div>
+    <div class="cc"><div class="ct">Tipos de Capacitación</div><canvas id="cTip" style="max-height:230px"></canvas></div>
+    <div class="cc"><div class="ct">Cobertura por Eje Temático</div><canvas id="cEje" style="max-height:230px"></canvas></div>
+    <div class="cc"><div class="ct">Tendencia Mensual</div><canvas id="cMes" style="max-height:230px"></canvas></div>
+    <div class="cc full"><div class="ct">Capacitados por Unidad</div><canvas id="cUni" style="max-height:190px"></canvas></div>
+  </div>
+</div>
+
+<!-- REGISTROS -->
+<div id="view-registros" class="view">
+  <div class="ph"><h2>REGISTROS DE SHAREPOINT</h2><p id="treg">Lista PIC 2026</p></div>
+  <div class="tc">
+    <div class="th">
+      <h3>Items de la lista</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="xbtn" onclick="cargarDatos()" style="color:var(--green);border-color:rgba(46,204,113,.3)">🔄 Actualizar</button>
+        <button class="xbtn" onclick="expCSV()">⬇ CSV</button>
+        <button class="xbtn" onclick="expXLS()">⬇ Excel</button>
+      </div>
+    </div>
+    <div class="ts">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Fecha</th><th>Unidad</th><th>Tipo</th><th>Eje</th>
+          <th>Hrs</th><th>OF</th><th>SUB</th><th>SLP</th><th>SL12</th><th>SL18</th>
+          <th>CAD</th><th>ALU</th><th>CIV</th><th>TOT</th><th>Val</th>
+        </tr></thead>
+        <tbody id="rtb"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- IA -->
+<div id="view-analisis" class="view">
+  <div class="ph"><h2>ANÁLISIS CON INTELIGENCIA ARTIFICIAL</h2><p>Consultas sobre los datos del PIC 2026</p></div>
+  <div class="sc">
+    <div style="display:flex;gap:9px;margin-bottom:12px">
+      <input id="iaq" placeholder="Ej: ¿Cómo vamos en el Eje 3? ¿Qué unidad tiene más brecha?" style="flex:1">
+      <button class="btn2" onclick="askIA()">Analizar ▶</button>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="iac" onclick="sq('Dame un resumen ejecutivo del estado del PIC 2026')">📊 Resumen</button>
+      <button class="iac" onclick="sq('Qué categoría tiene menos capacitación y qué acciones recomiendas')">⚠️ Brechas</button>
+      <button class="iac" onclick="sq('Cuáles ejes temáticos tienen menos cobertura')">🎯 Ejes</button>
+      <button class="iac" onclick="sq('Qué unidades tienen pocos registros')">🔍 Cobertura</button>
+      <button class="iac" onclick="sq('Dame recomendaciones para el próximo trimestre')">💡 Recomendaciones</button>
+      <button class="iac" onclick="sq('Analiza la calidad según las valoraciones')">⭐ Calidad</button>
+    </div>
+  </div>
+  <div class="tc" id="iaCard" style="display:none">
+    <div class="th"><h3>🤖 Asistente IA</h3><button class="xbtn" onclick="copyIA()">📋 Copiar</button></div>
+    <div id="iaR" style="padding:18px;font-family:var(--fb);line-height:1.75;white-space:pre-wrap;font-size:.84rem"></div>
+  </div>
+  <div class="tc"><div class="th"><h3>📈 Estadísticas</h3></div>
+    <div id="stats" style="padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px"></div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div id="view-config" class="view">
+  <div class="ph"><h2>⚙️ CONFIGURACIÓN — SHAREPOINT</h2><p>Conecte su lista directamente · Sin Azure · Sin permisos adicionales</p></div>
+
+  <div id="sbar" class="ssb warn">⚠️ Configure la URL de su lista de SharePoint para comenzar.</div>
+
+  <!-- PASO 1: URL -->
+  <div class="sc">
+    <div style="font-family:var(--fh);font-size:.95rem;color:var(--gold);letter-spacing:1.5px;margin-bottom:16px">
+      PASO 1 — URL DE SU LISTA
+    </div>
+    <div class="fg-g">
+      <label>URL base de SharePoint *</label>
+      <input id="c-site" placeholder="https://fuerzaaereacolombia-my.sharepoint.com/personal/gustavo_rojas_fac_mil_co"
+        style="border-color:rgba(74,158,255,.4);background:rgba(74,158,255,.04)">
+      <span style="font-size:.68rem;color:var(--dim)">Todo lo que está antes de /Lists/ en su URL</span>
+    </div>
+    <div class="fg-g">
+      <label>Nombre exacto de la lista *</label>
+      <input id="c-list" placeholder="PIC 2026 LISTS"
+        style="border-color:rgba(74,158,255,.4);background:rgba(74,158,255,.04)">
+      <span style="font-size:.68rem;color:var(--dim)">El nombre tal como aparece en SharePoint (con espacios si los tiene)</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="detectarColumnas()">🔍 Detectar columnas</button>
+      <button class="btn2" onclick="cargarDatos()">🔄 Cargar datos</button>
+    </div>
+  </div>
+
+  <!-- PASO 2: MAPEO -->
+  <div class="sc" id="mapdiv" style="display:none">
+    <div style="font-family:var(--fh);font-size:.95rem;color:var(--gold);letter-spacing:1.5px;margin-bottom:8px">
+      PASO 2 — MAPEO DE COLUMNAS
+    </div>
+    <div class="ssb info">ℹ️ Asocie cada campo del PIC 2026 con la columna correspondiente en su lista de SharePoint.</div>
+    <table class="map-table">
+      <thead><tr><th>Campo PIC 2026</th><th>Columna en su lista</th></tr></thead>
+      <tbody id="maptb"></tbody>
+    </table>
+    <br>
+    <button class="btn" onclick="guardarMapeo()">💾 Guardar y cargar datos</button>
+  </div>
+
+  <!-- CÓMO FUNCIONA -->
+  <div class="sc">
+    <div style="font-family:var(--fh);font-size:.95rem;color:var(--gold);letter-spacing:1.5px;margin-bottom:14px">
+      ℹ️ CÓMO FUNCIONA
+    </div>
+    <div style="font-size:.82rem;color:var(--dim);line-height:1.9">
+      ✅ <strong style="color:var(--txt)">Sin Azure, sin permisos adicionales</strong> — usa su sesión activa de Microsoft 365<br>
+      ✅ <strong style="color:var(--txt)">Requisito</strong>: abrir este HTML estando logueado en SharePoint en el mismo navegador<br>
+      ✅ <strong style="color:var(--txt)">Lee directo</strong> de su lista via API REST de SharePoint<br>
+      ✅ <strong style="color:var(--txt)">Las unidades</strong> siguen ingresando datos en la lista de SharePoint como siempre<br>
+      ✅ <strong style="color:var(--txt)">Usted</strong> abre este dashboard y hace clic en 🔄 Actualizar para ver todo consolidado<br><br>
+      <strong style="color:var(--gold)">Pasos para usar:</strong><br>
+      1. Abra SharePoint en su navegador (inicie sesión)<br>
+      2. En otra pestaña abra este archivo HTML<br>
+      3. Configure la URL y nombre de la lista arriba<br>
+      4. Clic en "Detectar columnas" → mapee los campos → Guardar<br>
+      5. Clic en 🔄 Actualizar cuando quiera ver datos frescos
+    </div>
+  </div>
+</div>
+
+<div class="lov" id="lov"><div class="spinner"></div><div class="ltxt" id="ltxt">CARGANDO...</div></div>
+<div class="toast" id="tst"></div>
+
+<script>
+// ═══════ CONFIG ═══════
+const CK = 'pic2026sp2';
+let recs = [], CH = {};
+let cfg = {
+  site: 'https://fuerzaaereacolombia-my.sharepoint.com/personal/gustavo_rojas_fac_mil_co',
+  list: 'PIC 2026 LISTS',
+  map: {}
+};
+// Mapeo por defecto — nombres internos comunes de SharePoint
+// Se actualiza automáticamente al detectar columnas
+const DEFAULT_MAP = {
+  uni:  'Unidad',
+  fch:  'Fecha',
+  tip:  'Tipo',
+  eje:  'Eje',
+  hrs:  'Horas',
+  of:   'OF',
+  sb:   'SUB',
+  sl:   'SLP',
+  s2:   'SL12',
+  s3:   'SL18',
+  cd:   'Cadetes',
+  al:   'Alumnos',
+  cv:   'Civiles',
+  tot:  'Total',
+  val:  'Valoracion',
+  ela:  'Elaboro',
+  obs:  'Observaciones'
+};
+
+const CAMPOS_PIC = [
+  {k:'uni',  label:'Unidad / Dependencia', req:true},
+  {k:'fch',  label:'Fecha',               req:true},
+  {k:'tip',  label:'Tipo de Capacitación', req:true},
+  {k:'eje',  label:'Eje Temático',         req:true},
+  {k:'hrs',  label:'Horas Dictadas',       req:true},
+  {k:'of',   label:'OF',                   req:false},
+  {k:'sb',   label:'SUB',                  req:false},
+  {k:'sl',   label:'SLP / IMP',            req:false},
+  {k:'s2',   label:'SL12 / IM12',          req:false},
+  {k:'s3',   label:'SL18 / IM18',          req:false},
+  {k:'cd',   label:'Cadetes',              req:false},
+  {k:'al',   label:'Alumnos',              req:false},
+  {k:'cv',   label:'Civiles',              req:false},
+  {k:'tot',  label:'Total Capacitados',    req:true},
+  {k:'val',  label:'Valoración FR-172',    req:false},
+  {k:'ela',  label:'Elaboró',              req:false},
+  {k:'obs',  label:'Observaciones',        req:false},
+];
+
+window.onload = () => {
+  loadCfg();
+  setInterval(tick, 1000); tick();
+  renderAll();
+  updatePill();
+};
+
+function tick(){document.getElementById('clk').textContent=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+
+function loadCfg(){
+  try{
+    const s = localStorage.getItem(CK);
+    if(s){ cfg = Object.assign(cfg, JSON.parse(s)); applyCfg(); }
+  }catch{}
+}
+function applyCfg(){
+  if(cfg.site) document.getElementById('c-site').value = cfg.site;
+  if(cfg.list) document.getElementById('c-list').value = cfg.list;
+}
+function saveCfgToStorage(){
+  cfg.site = (document.getElementById('c-site').value||'').trim().replace(/\/+$/,'');
+  cfg.list = (document.getElementById('c-list').value||'').trim();
+  localStorage.setItem(CK, JSON.stringify(cfg));
+}
+
+// ═══════ SHAREPOINT API ═══════
+function spUrl(path){
+  return `${cfg.site}/_api/${path}`;
+}
+async function spFetch(path){
+  const url = spUrl(path);
+  const res = await fetch(url, {
+    headers: {
+      'Accept': 'application/json;odata=verbose',
+      'Content-Type': 'application/json;odata=verbose'
+    },
+    credentials: 'include'  // usa la sesión activa del navegador
+  });
+  if(!res.ok){
+    const txt = await res.text();
+    throw new Error(`HTTP ${res.status} — ${txt.substring(0,200)}`);
+  }
+  return res.json();
+}
+
+// Detectar columnas de la lista
+async function detectarColumnas(){
+  saveCfgToStorage();
+  if(!cfg.site||!cfg.list){toast('⚠️ Complete la URL y nombre de lista',1);return;}
+  load('Detectando columnas de SharePoint...');
+  try{
+    const listEnc = encodeURIComponent(cfg.list);
+    const data = await spFetch(`lists/getbytitle('${listEnc}')/fields?$filter=Hidden eq false and ReadOnlyField eq false&$select=Title,InternalName,TypeAsString`);
+    const fields = (data.d&&data.d.results)||[];
+    if(!fields.length) throw new Error('No se encontraron columnas. Verifique el nombre de la lista.');
+
+    // Guardar columnas disponibles
+    cfg.fields = fields.map(f=>({title:f.Title, internal:f.InternalName, type:f.TypeAsString}));
+    localStorage.setItem(CK, JSON.stringify(cfg));
+
+    // Construir tabla de mapeo
+    renderMapeo(cfg.fields);
+    document.getElementById('mapdiv').style.display='block';
+    document.getElementById('sbar').className='ssb ok';
+    document.getElementById('sbar').textContent='✅ Lista detectada. '+fields.length+' columnas encontradas. Complete el mapeo abajo.';
+    toast('✅ '+fields.length+' columnas detectadas');
+  }catch(e){
+    document.getElementById('sbar').className='ssb err';
+    document.getElementById('sbar').textContent='❌ '+e.message;
+    toast('❌ '+e.message,1);
+  }finally{unload();}
+}
+
+function renderMapeo(fields){
+  const tb = document.getElementById('maptb');
+  const opts = ['(ignorar)', ...fields.map(f=>f.InternalName)];
+  const optsHtml = opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+
+  tb.innerHTML = CAMPOS_PIC.map(campo=>{
+    // Intentar autodetectar por nombre similar
+    const auto = cfg.map[campo.k] || autoMatch(campo.k, fields);
+    const selOpts = opts.map(o=>`<option value="${o}" ${o===auto?'selected':''}>${o}</option>`).join('');
+    return `<tr>
+      <td>
+        <span class="col-tag">${campo.label}</span>
+        ${campo.req?'<span class="col-req"> *</span>':''}
+      </td>
+      <td><select id="map_${campo.k}" style="font-size:.75rem;padding:5px 8px">${selOpts}</select></td>
+    </tr>`;
+  }).join('');
+}
+
+function autoMatch(key, fields){
+  // Intenta encontrar columna por nombre similar (insensible a mayúsculas/acentos)
+  const aliases = {
+    uni:  ['unidad','dependencia','unit'],
+    fch:  ['fecha','date','fechacapacitacion'],
+    tip:  ['tipo','tipocapacitacion','type'],
+    eje:  ['eje','ejetematico','eje_tematico'],
+    hrs:  ['horas','hours','horasdictadas'],
+    of:   ['of','oficiales','officer'],
+    sb:   ['sub','suboficiales'],
+    sl:   ['slp','imp','soldadoslp'],
+    s2:   ['sl12','im12'],
+    s3:   ['sl18','im18'],
+    cd:   ['cadetes','cadets'],
+    al:   ['alumnos','students'],
+    cv:   ['civiles','civilians'],
+    tot:  ['total','totalpoblacion','totalcapacitados'],
+    val:  ['valoracion','calificacion','rating','fr172'],
+    ela:  ['elaboro','elaborado','elabora'],
+    obs:  ['observaciones','obs','notas','notes'],
+  };
+  const keys = aliases[key]||[];
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+  for(const f of fields){
+    const fn = norm(f.InternalName);
+    const ft = norm(f.Title);
+    if(keys.some(k=>fn.includes(k)||ft.includes(k))) return f.InternalName;
+  }
+  return '(ignorar)';
+}
+
+function guardarMapeo(){
+  cfg.map = {};
+  CAMPOS_PIC.forEach(campo=>{
+    const v = document.getElementById('map_'+campo.k).value;
+    if(v !== '(ignorar)') cfg.map[campo.k] = v;
+  });
+  saveCfgToStorage();
+  localStorage.setItem(CK, JSON.stringify(cfg));
+  toast('✅ Mapeo guardado. Cargando datos...');
+  cargarDatos();
+}
+
+// Cargar todos los items de la lista
+async function cargarDatos(){
+  if(!cfg.site||!cfg.list){toast('⚠️ Configure la URL primero',1);sv('config',document.querySelectorAll('.nb')[3]);return;}
+  load('Cargando datos de SharePoint...');
+  const p = document.getElementById('cpill');
+  p.className='cpill spin'; p.innerHTML='🔗&nbsp;Cargando...';
+  try{
+    const listEnc = encodeURIComponent(cfg.list);
+    // Pedir hasta 5000 items con paginación
+    let all = [], url = `lists/getbytitle('${listEnc}')/items?$top=500&$orderby=Created desc`;
+    while(url){
+      const data = await spFetch(url);
+      const items = (data.d&&data.d.results)||[];
+      all = all.concat(items);
+      // Paginación
+      const next = data.d&&data.d.__next;
+      url = next ? next.replace(cfg.site+'/_api/','') : null;
+    }
+    // Mapear campos
+    recs = all.map(item => mapItem(item));
+    renderAll(); updatePill(true, all.length);
+    document.getElementById('dsub').textContent =
+      new Date().toLocaleString('es-CO')+' · '+recs.length+' registros · '+
+      [...new Set(recs.map(r=>r.uni).filter(Boolean))].length+' unidades';
+    toast('✅ '+recs.length+' registros cargados desde SharePoint');
+  }catch(e){
+    updatePill(false);
+    const msg = e.message.includes('401')||e.message.includes('403')
+      ? '❌ Sin acceso. Abra SharePoint primero en este navegador y vuelva a intentar.'
+      : '❌ '+e.message;
+    document.getElementById('sbar').className='ssb err';
+    document.getElementById('sbar').textContent=msg;
+    toast(msg,1);
+  }finally{unload();}
+}
+
+function mapItem(item){
+  const m = cfg.map;
+  const v = (k,num=false) => {
+    const col = m[k];
+    if(!col) return num?0:'';
+    const val = item[col];
+    if(num) return parseFloat(val)||0;
+    if(val instanceof Date) return val.toISOString().split('T')[0];
+    if(val&&typeof val==='object'&&val.Value) return val.Value;
+    return val||'';
+  };
+  return {
+    id:  item.Id||item.ID,
+    uni: v('uni'),
+    fch: (v('fch')||'').toString().substring(0,10),
+    tip: v('tip'),
+    eje: v('eje'),
+    hrs: v('hrs',true),
+    of:  v('of',true),
+    sb:  v('sb',true),
+    sl:  v('sl',true),
+    s2:  v('s2',true),
+    s3:  v('s3',true),
+    cd:  v('cd',true),
+    al:  v('al',true),
+    cv:  v('cv',true),
+    tot: v('tot',true),
+    val: v('val',true),
+    ela: v('ela'),
+    obs: v('obs'),
+    src: 'sharepoint'
+  };
+}
+
+function updatePill(ok, n){
+  const p = document.getElementById('cpill');
+  const sb = document.getElementById('sbar');
+  if(ok===true){
+    p.className='cpill ok'; p.innerHTML='🔗&nbsp;SP conectado';
+    sb.className='ssb ok'; sb.textContent='✅ SharePoint conectado · '+n+' registros cargados.';
+  } else if(ok===false){
+    p.className='cpill off'; p.innerHTML='🔗&nbsp;Sin acceso';
+  } else {
+    p.className='cpill off'; p.innerHTML='🔗&nbsp;Sin conectar';
+  }
+}
+
+// ═══════ VISTAS ═══════
+function sv(name,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('view-'+name).classList.add('on');
+  if(btn)btn.classList.add('on');
+  renderAll();
+}
+
+// ═══════ RENDER ═══════
+function renderAll(){renderKPIs();renderCharts();renderTable();renderStats();}
+function renderKPIs(){
+  const T=recs.reduce((s,r)=>s+(+r.tot||0),0);
+  const H=recs.reduce((s,r)=>s+(+r.hrs||0),0);
+  const C=recs.length;
+  const O=recs.reduce((s,r)=>s+(+r.of||0)+(+r.sb||0),0);
+  const S=recs.reduce((s,r)=>s+(+r.sl||0)+(+r.s2||0)+(+r.s3||0),0);
+  [C,T,H,C,O,S].forEach((v,i)=>animN('k'+i,v));
+}
+function animN(id,tgt){
+  const el=document.getElementById(id);const cur=parseInt(el.textContent)||0;
+  if(cur===tgt)return;const d=tgt-cur;let i=0;
+  const t=setInterval(()=>{i++;el.textContent=Math.round(cur+d*(i/20));if(i>=20){clearInterval(t);el.textContent=tgt;}},16);
+}
+Chart.defaults.color='rgba(232,237,245,.85)';Chart.defaults.font.family="'IBM Plex Sans',sans-serif";
+const GC='rgba(201,168,76,.1)';
+const CL=['#c9a84c','#4a9eff','#2ecc71','#e74c3c','#9b59b6','#1abc9c','#f39c12','#e67e22'];
+function dc(id){if(CH[id]){CH[id].destroy();delete CH[id];}}
+function renderCharts(){
+  dc('cat');
+  const cd={OF:0,SUB:0,'SLP/IMP':0,SL12:0,SL18:0,Cadetes:0,Alumnos:0,Civiles:0};
+  recs.forEach(r=>{cd.OF+=(+r.of||0);cd.SUB+=(+r.sb||0);cd['SLP/IMP']+=(+r.sl||0);cd.SL12+=(+r.s2||0);cd.SL18+=(+r.s3||0);cd.Cadetes+=(+r.cd||0);cd.Alumnos+=(+r.al||0);cd.Civiles+=(+r.cv||0);});
+  CH.cat=new Chart(document.getElementById('cCat'),{type:'doughnut',
+    data:{labels:Object.keys(cd),datasets:[{data:Object.values(cd),backgroundColor:CL,borderColor:'#0a1628',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'right',labels:{padding:8,font:{size:9}}}}}});
+  dc('tip');const ti={};recs.forEach(r=>{if(r.tip)ti[r.tip]=(ti[r.tip]||0)+1;});
+  if(Object.keys(ti).length)CH.tip=new Chart(document.getElementById('cTip'),{type:'bar',
+    data:{labels:Object.keys(ti),datasets:[{data:Object.values(ti),backgroundColor:'rgba(201,168,76,.55)',borderColor:'#c9a84c',borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:GC},ticks:{stepSize:1}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});
+  dc('eje');const ej={};recs.forEach(r=>{if(r.eje){const k=r.eje.split('—')[0].split('-')[0].trim();ej[k]=(ej[k]||0)+(+r.tot||0);}});
+  if(Object.keys(ej).length)CH.eje=new Chart(document.getElementById('cEje'),{type:'bar',
+    data:{labels:Object.keys(ej),datasets:[{data:Object.values(ej),backgroundColor:CL.map(c=>c+'88'),borderColor:CL,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:GC}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});
+  dc('mes');const ms={};recs.forEach(r=>{const m=(r.fch||'').substring(0,7);if(m&&m.length===7)ms[m]=(ms[m]||0)+(+r.tot||0);});
+  const mk=Object.keys(ms).sort();
+  if(mk.length)CH.mes=new Chart(document.getElementById('cMes'),{type:'line',
+    data:{labels:mk,datasets:[{label:'Capacitados',data:mk.map(m=>ms[m]),borderColor:'#4a9eff',backgroundColor:'rgba(74,158,255,.1)',tension:.4,fill:true,pointBackgroundColor:'#4a9eff',pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:GC}},x:{grid:{display:false}}}}});
+  dc('uni');const un={};recs.forEach(r=>{if(r.uni)un[r.uni]=(un[r.uni]||0)+(+r.tot||0);});
+  const us=Object.entries(un).sort((a,b)=>b[1]-a[1]);
+  if(us.length)CH.uni=new Chart(document.getElementById('cUni'),{type:'bar',
+    data:{labels:us.map(e=>e[0]),datasets:[{data:us.map(e=>e[1]),backgroundColor:'rgba(46,204,113,.4)',borderColor:'#2ecc71',borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:GC}},x:{grid:{display:false}}}}});
+}
+function renderTable(){
+  const tb=document.getElementById('rtb');
+  document.getElementById('treg').textContent=recs.length+' registros · '+[...new Set(recs.map(r=>r.uni).filter(Boolean))].length+' unidades';
+  if(!recs.length){tb.innerHTML='<tr><td colspan="16"><div class="empty"><div class="ei">🔗</div><p>Sin datos. Configure SharePoint y haga clic en Actualizar.</p></div></td></tr>';return;}
+  const rows=recs.map((r,i)=>`<tr>
+    <td>${i+1}</td><td>${r.fch||''}</td>
+    <td><span class="bdg b-bl">${r.uni||'—'}</span></td>
+    <td style="font-size:.72rem">${r.tip||'—'}</td>
+    <td style="font-size:.68rem;color:var(--dim)">${r.eje?(r.eje.split('—')[0].split('-')[0].trim()):'—'}</td>
+    <td>${r.hrs||0}h</td><td>${r.of||0}</td><td>${r.sb||0}</td><td>${r.sl||0}</td>
+    <td>${r.s2||0}</td><td>${r.s3||0}</td><td>${r.cd||0}</td><td>${r.al||0}</td><td>${r.cv||0}</td>
+    <td><strong style="color:var(--gold)">${r.tot||0}</strong></td><td>${r.val||'—'}</td></tr>`).join('');
+  const Tf=f=>recs.reduce((s,r)=>s+(+r[f]||0),0);
+  tb.innerHTML=rows+`<tr class="trow"><td colspan="5">TOTALES</td><td>${Tf('hrs')}h</td>
+    <td>${Tf('of')}</td><td>${Tf('sb')}</td><td>${Tf('sl')}</td><td>${Tf('s2')}</td><td>${Tf('s3')}</td>
+    <td>${Tf('cd')}</td><td>${Tf('al')}</td><td>${Tf('cv')}</td><td>${Tf('tot')}</td><td></td></tr>`;
+}
+function renderStats(){
+  const el=document.getElementById('stats');el.innerHTML='';
+  if(!recs.length){el.innerHTML='<p style="color:var(--dim);font-size:.8rem">Sin datos aún.</p>';return;}
+  const uns=[...new Set(recs.map(r=>r.uni).filter(Boolean))];
+  const pH=recs.length?(recs.reduce((s,r)=>s+(+r.hrs||0),0)/recs.length).toFixed(1):'0';
+  const V=recs.filter(r=>r.val>0);const aV=V.length?(V.reduce((s,r)=>s+(+r.val||0),0)/V.length).toFixed(1):'N/A';
+  const top=Object.entries(recs.reduce((a,r)=>{if(r.uni)a[r.uni]=(a[r.uni]||0)+(+r.tot||0);return a;},{})).sort((a,b)=>b[1]-a[1])[0];
+  const eM=Object.entries(recs.reduce((a,r)=>{if(r.eje)a[r.eje]=(a[r.eje]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1])[0];
+  [{l:'Unidades',v:uns.length,i:'🏛️'},{l:'Prom. Horas',v:pH+'h',i:'⏱️'},{l:'Valoración',v:aV+'/10',i:'⭐'},
+   {l:'Unidad Top',v:top?top[0]:'N/A',i:'🏆'},{l:'Eje Principal',v:eM?eM[0].split('—')[0].split('-')[0].trim():'N/A',i:'🎯'},
+   {l:'Total Personal',v:recs.reduce((s,r)=>s+(+r.tot||0),0),i:'👥'}
+  ].forEach(s=>{
+    const d=document.createElement('div');
+    d.style.cssText='background:rgba(10,22,40,.65);border:1px solid var(--bord);border-radius:8px;padding:15px;text-align:center';
+    d.innerHTML='<div style="font-size:1.55rem;margin-bottom:5px">'+s.i+'</div><div style="font-family:var(--fh);font-size:1.25rem;font-weight:700;color:var(--gold)">'+s.v+'</div><div style="font-family:var(--fm);font-size:.58rem;color:var(--dim);letter-spacing:1px;margin-top:3px">'+s.l+'</div>';
+    el.appendChild(d);
+  });
+}
+
+// ═══════ IA ═══════
+function sq(q){document.getElementById('iaq').value=q;askIA();}
+async function askIA(){
+  const q=document.getElementById('iaq').value.trim();
+  if(!q){toast('⚠️ Ingrese una consulta',1);return;}
+  const ctx=recs.length===0?'Sin registros aún.':JSON.stringify({
+    total:recs.length,
+    capacitados:recs.reduce((s,r)=>s+(+r.tot||0),0),
+    horas:recs.reduce((s,r)=>s+(+r.hrs||0),0),
+    porUni:recs.reduce((a,r)=>{if(r.uni){if(!a[r.uni])a[r.uni]={n:0,tot:0};a[r.uni].n++;a[r.uni].tot+=(+r.tot||0);}return a;},{}),
+    porEje:recs.reduce((a,r)=>{if(r.eje)a[r.eje]=(a[r.eje]||0)+1;return a;},{}),
+    porCat:{OF:recs.reduce((s,r)=>s+(+r.of||0),0),SUB:recs.reduce((s,r)=>s+(+r.sb||0),0),
+      Tropa:recs.reduce((s,r)=>s+(+r.sl||0)+(+r.s2||0)+(+r.s3||0),0),
+      Cadetes:recs.reduce((s,r)=>s+(+r.cd||0),0),Civiles:recs.reduce((s,r)=>s+(+r.cv||0),0)}
+  });
+  load('Consultando IA...');document.getElementById('iaCard').style.display='none';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
+        system:'Eres experto en Planes Institucionales de Capacitación (PIC) de la FAC — JEAES. Ejes PIC 2026: Eje1 Paz Total/DDHH, Eje2 Territorio/Ambiente, Eje3 Mujeres/Inclusión, Eje4 Transformación Cultural, Eje5 Probidad/Ética, Eje6 Habilidades. Responde en español ejecutivo y directo.',
+        messages:[{role:'user',content:'DATOS:\n'+ctx+'\n\nCONSULTA: '+q}]})});
+    const data=await res.json();
+    document.getElementById('iaR').textContent=data.content?.[0]?.text||'Sin respuesta.';
+    document.getElementById('iaCard').style.display='block';
+  }catch(e){toast('❌ Error IA',1);}
+  finally{unload();}
+}
+function copyIA(){navigator.clipboard.writeText(document.getElementById('iaR').textContent);toast('📋 Copiado');}
+
+// ═══════ EXPORT ═══════
+function expCSV(){
+  if(!recs.length){toast('⚠️ Sin datos',1);return;}
+  const H=['#','Fecha','Unidad','Tipo','Eje','Hrs','OF','SUB','SLP','SL12','SL18','Cadetes','Alumnos','Civiles','Total','Val'];
+  const rows=recs.map((r,i)=>[i+1,r.fch,r.uni,r.tip,r.eje,r.hrs,r.of,r.sb,r.sl,r.s2,r.s3,r.cd,r.al,r.cv,r.tot,r.val]
+    .map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(','));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+[H.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8;'}));
+  a.download='PIC2026_'+new Date().toISOString().split('T')[0]+'.csv';a.click();toast('✅ CSV exportado');
+}
+function expXLS(){
+  if(!recs.length){toast('⚠️ Sin datos',1);return;}
+  const H=['#','Fecha','Unidad','Tipo','Eje','Horas','OF','SUB','SLP','SL12','SL18','Cadetes','Alumnos','Civiles','Total','Valoración'];
+  let html='<table border="1"><tr>'+H.map(h=>'<th>'+h+'</th>').join('')+'</tr>';
+  recs.forEach((r,i)=>{html+=`<tr><td>${i+1}</td><td>${r.fch}</td><td>${r.uni}</td><td>${r.tip}</td><td>${r.eje||''}</td><td>${r.hrs}</td><td>${r.of}</td><td>${r.sb}</td><td>${r.sl}</td><td>${r.s2}</td><td>${r.s3}</td><td>${r.cd}</td><td>${r.al}</td><td>${r.cv}</td><td>${r.tot}</td><td>${r.val||''}</td></tr>`;});
+  const a=document.createElement('a');
+  a.href='data:application/vnd.ms-excel;charset=utf-8,\uFEFF'+encodeURIComponent(html+'</table>');
+  a.download='PIC2026_'+new Date().toISOString().split('T')[0]+'.xls';a.click();toast('✅ Excel exportado');
+}
+
+// ═══════ UTILS ═══════
+function load(m){document.getElementById('ltxt').textContent=m||'CARGANDO...';document.getElementById('lov').classList.add('on');}
+function unload(){document.getElementById('lov').classList.remove('on');}
+function toast(msg,err=0){
+  const e=document.getElementById('tst');e.textContent=msg;
+  e.className='toast on'+(err?' err':'');
+  setTimeout(()=>e.classList.remove('on'),4500);
+}
+</script>
+</body>
+</html>
